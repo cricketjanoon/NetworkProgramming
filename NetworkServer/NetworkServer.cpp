@@ -4,10 +4,18 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
 #include <iostream>
+#include <vector>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 
 using namespace std;
+
+class Person {
+public:
+    string name;
+    int age;
+    char gender;
+};
 
 int main() {
 
@@ -82,6 +90,41 @@ int main() {
     }
 
     cout << "Accepted connection. " << endl;
+   
+    std::cout << "\n\n== STEP 6: Receive Data ==\n\n";
+
+    std::vector<Person> database = { {"john", 27, 'm'}, {"jimmy", 24, 'm'}, {"emily", 19, 'f'}};
+
+    char receive_buffer[200];
+    int  byte_received = recv(accept_socket, receive_buffer, 200, 0);
+    if (byte_received < 0) {
+        printf("Clinet error: %ld.\n", WSAGetLastError());
+        return 0;
+    }
+    else {
+        printf("Received data: %s \n", receive_buffer);
+
+        Person data_to_send;
+        bool found = false;
+        for (int i = 0; i < database.size(); i++) {
+            if (database[i].name == receive_buffer) {
+                data_to_send = database[i];
+                found = true;
+                break;
+            }
+        }
+
+        int byte_sent = send(accept_socket, (char*)&data_to_send, sizeof(data_to_send), 0);
+        if (byte_sent == SOCKET_ERROR) {
+            printf("Client send error: %d", WSAGetLastError());
+            return -1;
+        }
+        else {
+            printf("Sent %ld bytes.\n", byte_sent);
+        }
+
+    }
+    
     system("pause");
 
     WSACleanup();

@@ -8,6 +8,13 @@
 
 using namespace std;
 
+class Person {
+public:
+    string name;
+    int age;
+    char gender;
+};
+
 int main()
 {
     std::cout << "** == CLIENT APPLICATION == **\n";
@@ -56,6 +63,33 @@ int main()
         cout << "Client: connect() is okay. " << endl;
         cout << "Can start sending and receiving data ... " << endl;
     }
+
+    std::cout << "\n\n== STEP 4: Sending Data ==\n\n";
+
+    char buffer[200];
+    printf("Enter your message: ");
+    cin.getline(buffer, 200);
+
+    int byte_sent = send(client_socket, buffer, 200, 0);
+
+    if(byte_sent==SOCKET_ERROR){
+        printf("Server send error: %d", WSAGetLastError());
+        return -1;
+    }
+    else {
+        printf("Server: sent %ld bytes.\n", byte_sent);
+    }
+    
+    Person receive_data;
+    int byte_received = recv(client_socket, (char *)&receive_data, sizeof(receive_data), 0);
+    if(byte_received<0){
+        printf("Server error: %ld.\n", WSAGetLastError());
+        return 0;
+    }
+    else {
+        printf("Server sent following data -> Name: %s, Age: %d, Gender: %c.\n", receive_data.name.c_str(), receive_data.age, receive_data.gender);
+    }
+
 
     system("pause");
     WSACleanup();
