@@ -1,6 +1,3 @@
-// NetworkServer.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
 #include <iostream>
@@ -23,7 +20,7 @@ int main() {
 
     std::cout << "== STEP 1: Set up DLL ==\n\n";
 
-    SOCKET server_socket, accept_socket;
+    SOCKET server_socket;;
     int port = 55555;
     WSADATA wsa_data;
     int wsa_err;
@@ -42,7 +39,7 @@ int main() {
     std::cout << "\n\n== STEP 2: Set up Server Socket ==\n\n";
 
     server_socket = INVALID_SOCKET;
-    server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    server_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (server_socket == INVALID_SOCKET) {
         cout << "Error at socket: " << WSAGetLastError() << endl;
         WSACleanup();
@@ -54,14 +51,12 @@ int main() {
 
     std::cout << "\n\n== STEP 3: Bind socket ==\n\n";
 
-    sockaddr_in service;
-    service.sin_family = AF_INET;
+    sockaddr_in server_addrr;
+    server_addrr.sin_family = AF_INET;
+    server_addrr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server_addrr.sin_port = htons(port);
 
-    service.sin_addr.s_addr = inet_addr("127.0.0.1");
-    //InetPton(AF_INET, _T("127.0.0.1"), &service.sin_addr.s_addr);
-    service.sin_port = htons(port);
-
-    if (bind(server_socket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
+    if (bind(server_socket, (SOCKADDR*)&server_addrr, sizeof(server_addrr)) == SOCKET_ERROR) {
         cout << "bind() failed: " << WSAGetLastError() << endl;
         closesocket(server_socket);
         WSACleanup();
@@ -71,39 +66,24 @@ int main() {
         cout << "bind() is Okay!" << endl;
     }
 
-    std::cout << "\n\n== STEP 4: Listen Socket ==\n\n";
+    std::cout << "\n\n== STEP 4: Receive Data ==\n\n";
 
-    if (listen(server_socket, 1) == SOCKET_ERROR) {
-        cout << "listen(): Error listening at socket: " << WSAGetLastError() << endl;
-    }
-    else {
-        cout << "listen() is Okay. I'm waiting for connections. \n";
-    }
-
-    std::cout << "\n\n== STEP 5: Accept Connection ==\n\n";
-
-    accept_socket = accept(server_socket, nullptr, nullptr);
-    if (accept_socket == INVALID_SOCKET) {
-        cout << "accept failed: " << WSAGetLastError() << endl;
-        WSACleanup();
-        return -1;
-    }
-
-    cout << "Accepted connection. " << endl;
-   
-    std::cout << "\n\n== STEP 6: Receive Data ==\n\n";
-
-    std::vector<Person> database = { {"john", 27, 'm'}, {"jimmy", 24, 'm'}, {"emily", 19, 'f'}};
+    std::vector<Person> database = { {"john", 27, 'm'}, {"jimmy", 24, 'm'}, {"emily", 19, 'f'} };
 
     char receive_buffer[200];
-    int  byte_received = recv(accept_socket, receive_buffer, 200, 0);
+    sockaddr_in client_address;
+    int client_address_length = (int)sizeof(client_address);
+    int  byte_received = recvfrom(server_socket, receive_buffer, strlen(receive_buffer), 0, (struct sockaddr *)&client_address, &client_address_length);
     if (byte_received < 0) {
-        printf("Clinet error: %ld.\n", WSAGetLastError());
+        printf("Cound not receive datagram.\n");
+        WSACleanup();
         return 0;
     }
     else {
-        printf("Received data: %s \n", receive_buffer);
+        receive_buffer[byte_received] = 0; // adding ednline char after the lsat byte recieved
+        printf("Received query: %s \n", receive_buffer);
 
+        // Processing query
         Person data_to_send;
         bool found = false;
         for (int i = 0; i < database.size(); i++) {
@@ -114,17 +94,18 @@ int main() {
             }
         }
 
-        int byte_sent = send(accept_socket, (char*)&data_to_send, sizeof(data_to_send), 0);
-        if (byte_sent == SOCKET_ERROR) {
-            printf("Client send error: %d", WSAGetLastError());
-            return -1;
+        // Sending response back
+        int byte_sent = sendto(server_socket, (const char*)&data_to_send, sizeof(data_to_send), 0, (struct sockaddr*)&client_address, client_address_length);
+        if (byte_sent == -1) {
+            printf("Error sending response.\n");
+            WSACleanup();
+            return 0;
         }
         else {
-            printf("Sent %ld bytes.\n", byte_sent);
+            printf("Requested data sent.\n");
         }
-
     }
-    
+
     system("pause");
 
     WSACleanup();

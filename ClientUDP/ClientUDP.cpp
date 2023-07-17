@@ -17,7 +17,7 @@ public:
 
 int main()
 {
-    std::cout << "** == CLIENT APPLICATION == **\n";
+    std::cout << "** == CLIENT APPLICATION == **\n\n";
 
     std::cout << "== STEP 1: Set up DLL ==\n\n";
 
@@ -39,7 +39,7 @@ int main()
     std::cout << "== STEP 2: Set up Client Socket ==\n\n";
 
     client_socket = INVALID_SOCKET;
-    client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    client_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (client_socket == INVALID_SOCKET) {
         cout << "Error at socket(): " << WSAGetLastError() << endl;
         WSACleanup();
@@ -50,46 +50,38 @@ int main()
     }
 
     std::cout << "== STEP 3: Connect with server ==\n\n";
-    sockaddr_in client_service;
-    client_service.sin_family = AF_INET;
-    client_service.sin_addr.s_addr = inet_addr("127.0.0.1");
-    client_service.sin_port = htons(port);
-    if (connect(client_socket, (SOCKADDR*)&client_service, sizeof(client_service)) == SOCKET_ERROR) {
-        cout << "Client: connect() - Failed to connect" << endl;
+    sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server_address.sin_port = htons(port);
+
+    char buffer[200];
+    printf("Enter your request: ");
+    cin.getline(buffer, 200);
+
+    int byte_sent = sendto(client_socket, (const char*)buffer, strlen(buffer), 0, (struct sockaddr*)&server_address, sizeof(server_address));
+
+    if (byte_sent == -1) {
+        printf("Error transmitting data.\n");
         WSACleanup();
         return 0;
     }
     else {
-        cout << "Client: connect() is okay. " << endl;
-        cout << "Can start sending and receiving data ... " << endl;
+        printf("Request sent: %s\n", buffer);
     }
 
-    std::cout << "\n\n== STEP 4: Sending Data ==\n\n";
-
-    char buffer[200];
-    printf("Enter your message: ");
-    cin.getline(buffer, 200);
-
-    int byte_sent = send(client_socket, buffer, 200, 0);
-
-    if(byte_sent==SOCKET_ERROR){
-        printf("Server send error: %d", WSAGetLastError());
-        return -1;
-    }
-    else {
-        printf("Server: sent %ld bytes.\n", byte_sent);
-    }
-    
     Person receive_data;
-    int byte_received = recv(client_socket, (char *)&receive_data, sizeof(receive_data), 0);
-    if(byte_received<0){
-        printf("Server error: %ld.\n", WSAGetLastError());
+    sockaddr_in server_address2;
+    int server_address_length = (int)sizeof(server_address2);
+    int  byte_received = recvfrom(client_socket, (char *)&receive_data, sizeof(receive_data), 0, (struct sockaddr*)&server_address2, &server_address_length);
+    if (byte_received < 0) {
+        printf("Cound not receive datagram from server.\n");
+        WSACleanup();
         return 0;
     }
     else {
-        printf("Server sent following data -> Name: %s, Age: %d, Gender: %c.\n", receive_data.name.c_str(), receive_data.age, receive_data.gender);
+        printf("Server sent following data -> [Name: %s, Age: %d, Gender: %c].\n", receive_data.name.c_str(), receive_data.age, receive_data.gender);
     }
-
 
     system("pause");
     WSACleanup();

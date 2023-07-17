@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{bbbb0f28-ca2d-48ef-be63-4ca16d6e6136}</ProjectGuid>
-    <RootNamespace>NetworkServer</RootNamespace>
+    <ProjectGuid>{8c92cad5-1416-4e05-83a8-9569c8ba2d57}</ProjectGuid>
+    <RootNamespace>ClientUDP</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -128,7 +128,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="NetworkServer.cpp" />
+    <ClCompile Include="ClientUDP.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

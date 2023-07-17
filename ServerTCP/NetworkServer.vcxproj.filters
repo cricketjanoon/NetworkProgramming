@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NetworkClient.cpp">
+    <ClCompile Include="ServerTCP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
